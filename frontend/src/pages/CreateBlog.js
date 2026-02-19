@@ -1,21 +1,40 @@
-const express = require('express');
-const dotenv = require('dotenv');
-const cors = require('cors');
-const connectDB = require('./config/db');
+import React, { useState } from 'react';
+import api from '../api/api';
+import Toast from '../components/Toast';
 
-dotenv.config();
-connectDB();
+const CreateBlog = ({ setCurrentPage }) => {
+  const [formData, setFormData] = useState({ title: '', summary: '', content: '' });
+  const [toast, setToast] = useState(null);
 
-const app = express();
+  const handleChange = (e) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
 
-// Middleware
-app.use(express.json());
-app.use(cors());
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-// Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/blogs', require('./routes/blogs'));
-app.use('/api/communities', require('./routes/communities'));
+    try {
+      await api.post('/blogs', formData);
+      setToast({ message: 'Blog published!', type: 'success' });
+      setTimeout(() => setCurrentPage('blogs'), 1000);
+    } catch {
+      setToast({ message: 'Error creating blog', type: 'error' });
+    }
+  };
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  return (
+    <section>
+      <h1>Create Blog</h1>
+
+      <form onSubmit={handleSubmit}>
+        <input name="title" placeholder="Title" onChange={handleChange} required />
+        <input name="summary" placeholder="Summary" onChange={handleChange} required />
+        <textarea name="content" placeholder="Content" onChange={handleChange} required />
+        <button type="submit">Publish</button>
+      </form>
+
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+    </section>
+  );
+};
+
+export default CreateBlog;
